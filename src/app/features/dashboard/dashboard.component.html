@@ -1,0 +1,202 @@
+<div class="dashboard" [class.no-animations]="!animationsEnabled">
+
+  <!-- Animaciones desactivadas temporalmente -->
+
+  <!-- ── Topbar ─────────────────────────────────────────────── -->
+  <header class="topbar">
+    <img src="/logo.png" alt="Mundial Predictor 2026" class="topbar-logo">
+
+    <div class="topbar-right">
+      <!-- Toggle animaciones -->
+      <button class="anim-toggle" (click)="toggleAnimations()"
+        [attr.title]="animationsEnabled ? 'Desactivar animaciones' : 'Activar animaciones'">
+        @if (animationsEnabled) {
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+        } @else {
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="1" y1="1" x2="23" y2="23" />
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+        }
+      </button>
+
+      <!-- Menú de usuario -->
+      <div class="user-menu" (click)="toggleUserMenu()" [class.open]="userMenuOpen">
+        <span class="user-avatar">{{ session?.alias?.charAt(0)?.toUpperCase() ?? '?' }}</span>
+        <span class="user-name">{{ session?.alias ?? 'Usuario' }}</span>
+        <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+
+        @if (userMenuOpen) {
+        <div class="user-dropdown">
+          @if (isAdmin) {
+          <a routerLink="/admin" class="dropdown-item admin-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.07 4.93A10 10 0 0 0 4.93 19.07" />
+              <path d="M4.93 4.93A10 10 0 0 1 19.07 19.07" />
+            </svg>
+            Panel Admin
+          </a>
+          }
+          <button class="dropdown-item logout-item" (click)="logout()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Cerrar sesión
+          </button>
+        </div>
+        }
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Contenido principal ────────────────────────────────── -->
+  <main class="dashboard-content">
+
+    <!-- Saludo -->
+    <div class="welcome-block">
+      <h1 class="welcome-title">
+        ¡Bienvenido, {{ session?.alias ?? 'jugador' }}! 👋
+      </h1>
+      <p class="welcome-subtitle">Haz tus predicciones y compite por el primer lugar</p>
+    </div>
+
+    <!-- Grid de 4 cards -->
+    <div class="cards-grid">
+
+      <!-- ─── Card 1: Fase de Grupos (verde) ─────────────────── -->
+      <div class="nav-card card-green" [class.card-disabled]="!isGroupPhaseActive"
+        [class.card-visible]="cardsVisible[0]">
+        <div class="card-content">
+          <div class="card-text">
+            <h2 class="card-title">Fase de Grupos</h2>
+            <p class="card-desc">
+              @if (isGroupPhaseActive) { Predice los 12 grupos }
+              @else { Fase cerrada }
+            </p>
+            <button class="card-btn btn-green" routerLink="/grupos" [disabled]="!isGroupPhaseActive">
+              @if (isGroupPhaseActive) { Predecir } @else { Bloqueado 🔒 }
+            </button>
+          </div>
+          <div class="card-icon">
+            <!-- Ícono: grilla de fútbol -->
+            <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="8" y="8" width="26" height="26" rx="4" stroke="currentColor" stroke-width="3" />
+              <rect x="46" y="8" width="26" height="26" rx="4" stroke="currentColor" stroke-width="3" />
+              <rect x="8" y="46" width="26" height="26" rx="4" stroke="currentColor" stroke-width="3" />
+              <rect x="46" y="46" width="26" height="26" rx="4" stroke="currentColor" stroke-width="3" />
+              <circle cx="21" cy="21" r="6" fill="currentColor" opacity="0.45" />
+              <circle cx="59" cy="21" r="6" fill="currentColor" opacity="0.45" />
+              <circle cx="21" cy="59" r="6" fill="currentColor" opacity="0.45" />
+              <circle cx="59" cy="59" r="6" fill="currentColor" opacity="0.45" />
+            </svg>
+          </div>
+        </div>
+        @if (!isGroupPhaseActive) {
+        <div class="card-disabled-label">Fase finalizada</div>
+        }
+      </div>
+
+      <!-- ─── Card 2: Eliminatorias (naranja) ────────────────── -->
+      <div class="nav-card card-orange" [class.card-disabled]="!isKnockoutPhaseActive"
+        [class.card-visible]="cardsVisible[1]">
+        <div class="card-content">
+          <div class="card-text">
+            <h2 class="card-title">Eliminatorias</h2>
+            <p class="card-desc">
+              @if (isKnockoutPhaseActive) { Predice los partidos }
+              @else { Disponible próximamente }
+            </p>
+            <button class="card-btn btn-orange" routerLink="/eliminatorias" [disabled]="!isKnockoutPhaseActive">
+              @if (isKnockoutPhaseActive) { Predecir } @else { Próximamente ⏳ }
+            </button>
+          </div>
+          <div class="card-icon">
+            <!-- Ícono: bracket eliminatorio -->
+            <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="10" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2.5" />
+              <rect x="4" y="28" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2.5" />
+              <rect x="4" y="46" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2.5" />
+              <rect x="4" y="64" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2.5" />
+              <rect x="31" y="19" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2.5" />
+              <rect x="31" y="55" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2.5" />
+              <rect x="58" y="37" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2.5" />
+              <line x1="22" y1="15" x2="31" y2="15" stroke="currentColor" stroke-width="2" />
+              <line x1="22" y1="33" x2="31" y2="33" stroke="currentColor" stroke-width="2" />
+              <line x1="31" y1="15" x2="31" y2="33" stroke="currentColor" stroke-width="2" />
+              <line x1="31" y1="24" x2="31" y2="24" stroke="currentColor" stroke-width="2" />
+              <line x1="22" y1="51" x2="31" y2="51" stroke="currentColor" stroke-width="2" />
+              <line x1="22" y1="69" x2="31" y2="69" stroke="currentColor" stroke-width="2" />
+              <line x1="31" y1="51" x2="31" y2="69" stroke="currentColor" stroke-width="2" />
+              <line x1="49" y1="24" x2="58" y2="24" stroke="currentColor" stroke-width="2" />
+              <line x1="49" y1="60" x2="58" y2="60" stroke="currentColor" stroke-width="2" />
+              <line x1="58" y1="24" x2="58" y2="60" stroke="currentColor" stroke-width="2" />
+            </svg>
+          </div>
+        </div>
+        @if (!isKnockoutPhaseActive) {
+        <div class="card-disabled-label">Próximamente</div>
+        }
+      </div>
+
+      <!-- ─── Card 3: Tabla de Puntajes (cyan) ───────────────── -->
+      <div class="nav-card card-cyan" [class.card-visible]="cardsVisible[2]">
+        <div class="card-content">
+          <div class="card-text">
+            <h2 class="card-title">Tabla de Puntajes</h2>
+            <p class="card-desc">Mira la clasificación</p>
+            <button class="card-btn btn-cyan" routerLink="/leaderboard">
+              Ver tabla
+            </button>
+          </div>
+          <div class="card-icon">
+            <!-- Ícono: tabla de clasificación -->
+            <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="8" y="8" width="64" height="64" rx="6" stroke="currentColor" stroke-width="2.5" />
+              <line x1="8" y1="24" x2="72" y2="24" stroke="currentColor" stroke-width="2" />
+              <line x1="8" y1="40" x2="72" y2="40" stroke="currentColor" stroke-width="2" />
+              <line x1="8" y1="56" x2="72" y2="56" stroke="currentColor" stroke-width="2" />
+              <text x="16" y="36" font-size="9" fill="currentColor" opacity="0.7" font-family="monospace">1</text>
+              <text x="16" y="52" font-size="9" fill="currentColor" opacity="0.7" font-family="monospace">2</text>
+              <text x="16" y="68" font-size="9" fill="currentColor" opacity="0.7" font-family="monospace">3</text>
+              <rect x="28" y="28" width="32" height="4" rx="2" fill="currentColor" opacity="0.5" />
+              <rect x="28" y="44" width="24" height="4" rx="2" fill="currentColor" opacity="0.5" />
+              <rect x="28" y="60" width="20" height="4" rx="2" fill="currentColor" opacity="0.5" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Card 4: Resultados (morado) ────────────────────── -->
+      <div class="nav-card card-purple" [class.card-visible]="cardsVisible[3]">
+        <div class="card-content">
+          <div class="card-text">
+            <h2 class="card-title">Resultados</h2>
+            <p class="card-desc">Revisa los resultados</p>
+            <button class="card-btn btn-purple" routerLink="/resultados">
+              Ver resultados
+            </button>
+          </div>
+          <div class="card-icon">
+            <!-- Ícono: marcador 2-1 -->
+            <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="40" cy="40" r="30" stroke="currentColor" stroke-width="3" />
+              <circle cx="40" cy="40" r="30" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3"
+                opacity="0.3" />
+              <text x="40" y="46" font-size="20" fill="currentColor" text-anchor="middle" font-weight="bold"
+                font-family="Rajdhani, sans-serif">2-1</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>

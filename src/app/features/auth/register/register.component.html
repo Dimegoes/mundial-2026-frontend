@@ -1,0 +1,144 @@
+<div class="register-page">
+  <div class="bg-stadium"></div>
+  <div class="bg-overlay"></div>
+
+  <header class="register-header">
+    <img src="/logo.png" alt="Mundial Predictor 2026" class="logo">
+  </header>
+
+  <main class="register-card-wrapper">
+    <div class="register-card">
+
+      <!-- ── Indicador de pasos ──────────────────────── -->
+      <div class="steps-indicator">
+        <div class="step" [class.active]="step >= 1" [class.done]="step > 1">
+          <div class="step-dot">
+            @if (step > 1) {
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            } @else { 1 }
+          </div>
+          <span>Cuenta</span>
+        </div>
+        <div class="step-line" [class.done]="step > 1"></div>
+        <div class="step" [class.active]="step >= 2">
+          <div class="step-dot">2</div>
+          <span>Perfil</span>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════
+           PASO 1: Cuenta (email + password)
+           ═══════════════════════════════════════════════ -->
+      @if (step === 1) {
+      <h1 class="register-title">Crear Cuenta</h1>
+
+      <div class="form-group">
+        <label for="reg-email">Correo electrónico</label>
+        <input id="reg-email" type="email" placeholder="tu@correo.com" [(ngModel)]="email"
+          [class.error]="fieldError === 'email'" autocomplete="email" />
+        @if (fieldError === 'email') {
+        <span class="field-error">{{ errorMessage }}</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="reg-password">Contraseña</label>
+        <div class="password-wrapper">
+          <input id="reg-password" [type]="showPassword ? 'text' : 'password'"
+            placeholder="Mínimo 8 caracteres y un número" [(ngModel)]="password"
+            [class.error]="fieldError === 'password'" autocomplete="new-password" />
+          <button type="button" class="toggle-password" (click)="showPassword = !showPassword">
+            @if (showPassword) {
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+              <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+              <line x1="1" y1="1" x2="23" y2="23" />
+            </svg>
+            } @else {
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            }
+          </button>
+        </div>
+        @if (fieldError === 'password') {
+        <span class="field-error">{{ errorMessage }}</span>
+        }
+      </div>
+
+      @if (fieldError === 'general') {
+      <div class="error-banner">{{ errorMessage }}</div>
+      }
+
+      <button class="btn-primary" (click)="onStep1Submit()" [disabled]="isLoading">
+        @if (isLoading) { <span class="spinner"></span> Creando cuenta... }
+        @else { Continuar }
+      </button>
+
+      <p class="login-prompt">
+        ¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión</a>
+      </p>
+      }
+
+      <!-- ═══════════════════════════════════════════════
+           PASO 2: Perfil (nombre, alias, avatar)
+           ═══════════════════════════════════════════════ -->
+      @if (step === 2) {
+      <h1 class="register-title">Tu Perfil</h1>
+      <p class="register-subtitle">Personaliza cómo te verán los demás</p>
+
+      <div class="form-group">
+        <label for="reg-name">Nombre completo</label>
+        <input id="reg-name" type="text" placeholder="Tu nombre" [(ngModel)]="name"
+          [class.error]="fieldError === 'name'" />
+        @if (fieldError === 'name') {
+        <span class="field-error">{{ errorMessage }}</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="reg-alias">Alias (se mostrará en el leaderboard)</label>
+        <input id="reg-alias" type="text" placeholder="ej. el_crack_2026" [(ngModel)]="alias"
+          [class.error]="fieldError === 'alias'" />
+        @if (fieldError === 'alias') {
+        <span class="field-error">{{ errorMessage }}</span>
+        }
+      </div>
+
+      <!-- Selector de avatar predefinido -->
+      <div class="form-group">
+        <label>Elige tu avatar</label>
+        <div class="avatar-grid">
+          @for (av of AVATARS; track av.key) {
+          <button type="button" class="avatar-option" [class.selected]="selectedAvatar === av.key"
+            (click)="selectedAvatar = av.key" [attr.aria-label]="av.label">
+            <span class="avatar-emoji">{{ av.emoji }}</span>
+          </button>
+          }
+        </div>
+        @if (fieldError === 'avatar') {
+        <span class="field-error">{{ errorMessage }}</span>
+        }
+      </div>
+
+      @if (fieldError === 'general') {
+      <div class="error-banner">{{ errorMessage }}</div>
+      }
+
+      <div class="step2-actions">
+        <button class="btn-secondary" (click)="step = 1" [disabled]="isLoading">
+          ← Volver
+        </button>
+        <button class="btn-primary" (click)="onStep2Submit()" [disabled]="isLoading">
+          @if (isLoading) { <span class="spinner"></span> Guardando... }
+          @else { Crear perfil }
+        </button>
+      </div>
+      }
+
+    </div>
+  </main>
+</div>
