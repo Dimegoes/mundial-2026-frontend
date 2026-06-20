@@ -4,11 +4,6 @@
     <h1 class="page-title">Eliminatorias</h1>
     <p class="page-subtitle">Predice marcador, clasificado y si habrá penales en cada partido.</p>
 
-    <div class="mock-banner">
-      ⚠️ Tus predicciones de eliminatorias se guardan localmente en este navegador (no hay endpoint backend
-      todavía). No se sincronizan entre dispositivos ni sesiones.
-    </div>
-
     @if (knockoutPhaseLocked) {
       <div class="lock-banner">🔒 La fase de eliminatorias está bloqueada por el administrador.</div>
     }
@@ -98,8 +93,9 @@
               </label>
             </div>
 
-            <button class="btn-primary predict-btn" [disabled]="isMatchLocked(match)" (click)="savePrediction(match)">
+            <button class="btn-primary predict-btn" [disabled]="isMatchLocked(match) || isSaving(match.matchId)" (click)="savePrediction(match)">
               @if (isMatchLocked(match)) { Bloqueado 🔒 }
+              @else if (isSaving(match.matchId)) { Guardando... }
               @else if (isSaved(match.matchId)) { Actualizar Predicción }
               @else { Predecir Partido }
             </button>

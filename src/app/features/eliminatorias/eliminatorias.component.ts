@@ -2,12 +2,13 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { MatchService } from '../../core/services/match.service';
 import { ConfigService } from '../../core/services/config.service';
-import { KnockoutPredictionService } from '../../core/services/knockout-prediction.service';
-import { KnockoutPrediction } from '../../core/models/domain.models';
-import { KNOCKOUT_STAGE_ORDER, MATCH_STAGE_LABEL, COUNTRY_BY_ID } from '../../core/data/groups-mock.data';
+import { PredictionService } from '../../core/services/prediction.service';
+import { GroupService } from '../../core/services/group.service';
+import { KNOCKOUT_STAGE_ORDER, MATCH_STAGE_LABEL } from '../../core/data/match-stage.data';
 
 interface MatchView {
   matchId: number;
@@ -21,6 +22,7 @@ interface MatchView {
 }
 
 interface MatchPredictionForm {
+  predictionId: number | null;
   scoreTeamA: number | null;
   scoreTeamB: number | null;
   advancingTeamId: number | null;
@@ -38,14 +40,15 @@ export class EliminatoriasComponent implements OnInit {
   private auth        = inject(AuthService);
   private matchService = inject(MatchService);
   private configService = inject(ConfigService);
-  private knockoutPredictionService = inject(KnockoutPredictionService);
+  private predictionService = inject(PredictionService);
+  private groupService = inject(GroupService);
 
   readonly stages = KNOCKOUT_STAGE_ORDER;
   readonly stageLabel = MATCH_STAGE_LABEL;
 
   loading = signal(true);
+  saving = signal<number | null>(null);
   errorMsg = signal<string | null>(null);
-  savedMatchIds = signal<Set<number>>(new Set());
 
   activeStage = signal<number>(KNOCKOUT_STAGE_ORDER[0]);
   allMatches = signal<MatchView[]>([]);
@@ -66,6 +69,7 @@ export class EliminatoriasComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.groupService.ensureLoaded().subscribe();
     this._loadMatches();
   }
 
@@ -94,7 +98,7 @@ export class EliminatoriasComponent implements OnInit {
   }
 
   savePrediction(match: MatchView): void {
-    if (this.isMatchLocked(match)) return;
+    if (this.isMatchLocked(match) || this.saving() === match.matchId) return;
     const userId = this.auth.session()?.userId;
     if (!userId) return;
 
@@ -105,39 +109,51 @@ export class EliminatoriasComponent implements OnInit {
     }
 
     this.errorMsg.set(null);
+    this.saving.set(match.matchId);
 
-    const prediction: KnockoutPrediction = {
-      matchId: match.matchId,
-      userId,
-      scoreTeamA: form.scoreTeamA,
-      scoreTeamB: form.scoreTeamB,
-      advancingTeamId: form.advancingTeamId,
-      hasPenalties: form.hasPenalties,
-    };
+    const request$ = form.predictionId
+      ? this.predictionService.updateUserKnockoutPrediction(form.predictionId, form.scoreTeamA, form.scoreTeamB, form.advancingTeamId, form.hasPenalties)
+      : this.predictionService.createUserKnockoutPrediction(match.matchId, userId, form.scoreTeamA, form.scoreTeamB, form.advancingTeamId, form.hasPenalties);
 
-    this.knockoutPredictionService.upsert(prediction);
-    this.savedMatchIds.update(s => new Set(s).add(match.matchId));
+    request$.subscribe({
+      next: (res) => {
+        const predictionId = Number(res['predictionId'] ?? res['prediction_id']) || form.predictionId;
+        this.updateForm(match.matchId, { predictionId: predictionId ?? null });
+        this.saving.set(null);
+      },
+      error: () => {
+        this.errorMsg.set('No se pudo guardar la predicción.');
+        this.saving.set(null);
+      },
+    });
   }
 
   isSaved(matchId: number): boolean {
-    return this.savedMatchIds().has(matchId);
+    return !!this.forms()[matchId]?.predictionId;
+  }
+
+  isSaving(matchId: number): boolean {
+    return this.saving() === matchId;
   }
 
   teamName(countryId: number, fallback?: string): string {
-    return fallback || COUNTRY_BY_ID[countryId]?.name || `Equipo #${countryId}`;
+    return this.groupService.countryName(countryId, fallback);
   }
 
   private _emptyForm(): MatchPredictionForm {
-    return { scoreTeamA: null, scoreTeamB: null, advancingTeamId: null, hasPenalties: null };
+    return { predictionId: null, scoreTeamA: null, scoreTeamB: null, advancingTeamId: null, hasPenalties: null };
   }
 
   private _loadMatches(): void {
     const userId = this.auth.session()?.userId;
     this.loading.set(true);
 
-    this.matchService.getMatches().subscribe({
-      next: (raw) => {
-        const matches: MatchView[] = (raw ?? []).map(r => ({
+    forkJoin({
+      matches: this.matchService.getMatches(),
+      predictions: userId ? this.predictionService.getUserKnockoutPrediction(userId) : of([]),
+    }).subscribe({
+      next: ({ matches, predictions }) => {
+        const mapped: MatchView[] = (matches ?? []).map(r => ({
           matchId:      Number(r['matchId'] ?? r['match_id']),
           homeTeamId:   Number(r['homeTeamId'] ?? r['home_team_id']),
           awayTeamId:   Number(r['awayTeamId'] ?? r['away_team_id']),
@@ -148,29 +164,26 @@ export class EliminatoriasComponent implements OnInit {
           isLocked:     Number(r['isLocked'] ?? r['is_locked']) === 1,
         })).filter(m => !!m.matchId);
 
-        this.allMatches.set(matches);
+        this.allMatches.set(mapped);
 
         if (!this.matchesForActiveStage().length) {
-          const firstWithMatches = this.stages.find(s => matches.some(m => m.matchStageId === s));
+          const firstWithMatches = this.stages.find(s => mapped.some(m => m.matchStageId === s));
           if (firstWithMatches) this.activeStage.set(firstWithMatches);
         }
 
-        if (userId) {
-          const existing = this.knockoutPredictionService.getAllForUser(userId);
-          const forms: Record<number, MatchPredictionForm> = {};
-          const saved = new Set<number>();
-          existing.forEach(p => {
-            forms[p.matchId] = {
-              scoreTeamA: p.scoreTeamA,
-              scoreTeamB: p.scoreTeamB,
-              advancingTeamId: p.advancingTeamId,
-              hasPenalties: p.hasPenalties,
-            };
-            saved.add(p.matchId);
-          });
-          this.forms.set(forms);
-          this.savedMatchIds.set(saved);
-        }
+        const forms: Record<number, MatchPredictionForm> = {};
+        (predictions ?? []).forEach((p: Record<string, unknown>) => {
+          const matchId = Number(p['matchId'] ?? p['match_id']);
+          if (!matchId) return;
+          forms[matchId] = {
+            predictionId: Number(p['predictionId'] ?? p['prediction_id']) || null,
+            scoreTeamA: Number(p['scoreTeamA'] ?? p['score_team_a']),
+            scoreTeamB: Number(p['scoreTeamB'] ?? p['score_team_b']),
+            advancingTeamId: Number(p['advancingTeamId'] ?? p['advancing_team_id']),
+            hasPenalties: Boolean(p['hasPenalties'] ?? p['has_penalties']),
+          };
+        });
+        this.forms.set(forms);
 
         this.loading.set(false);
       },

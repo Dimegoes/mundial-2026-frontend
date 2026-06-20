@@ -13,11 +13,6 @@
 
   @if (activeTab() === 'fases') {
     <section class="panel">
-      <div class="mock-banner">
-        ⚠️ Estos toggles se guardan en localStorage de este navegador — el backend no tiene tabla de
-        configuración global, así que no se sincronizan con otros administradores ni dispositivos.
-      </div>
-
       <div class="toggle-row">
         <div>
           <strong>Fase de Grupos</strong>
@@ -106,8 +101,9 @@
     <section class="panel">
       <div class="mock-banner">
         ⚠️ El CSV se procesa en el navegador: cada fila llama a POST /match/create-match (no existe
-        endpoint de importación masiva en el backend). El mapeo de nombre de equipo y ronda usa datos
-        mock — revisa los resultados de la importación abajo.
+        endpoint de importación masiva en el backend). El equipo se resuelve contra los grupos/países
+        reales del backend — el nombre debe coincidir exacto (o usar el código FIFA de 3 letras). El
+        mapeo de "ronda" a matchStageId sigue siendo una suposición sin confirmar.
       </div>
 
       <p class="section-desc">Columnas esperadas: <code>round, home_team, away_team, kickoff_time</code> (fecha en formato YYYY-MM-DD HH:MM).</p>

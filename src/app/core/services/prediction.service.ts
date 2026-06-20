@@ -74,4 +74,49 @@ export class PredictionService {
     const params = new HttpParams().set('predictionId', predictionId.toString());
     return this.http.delete<Record<string, unknown>>(`${this.baseUrl}/prediction/delete-user-group-prediction`, { params });
   }
+
+  // ── Predicciones de Eliminatorias ──────────────────────────
+  // NUEVO: agregado al backend (ver PredictionController.java /
+  // user_knockout_predictions) — antes solo existía como mock local.
+
+  // POST /prediction/create-user-knockout-prediction
+  createUserKnockoutPrediction(
+    matchId: number, userId: number, scoreTeamA: number, scoreTeamB: number,
+    advancingTeamId: number, hasPenalties: boolean
+  ): Observable<Record<string, unknown>> {
+    const params = new HttpParams()
+      .set('matchId', matchId.toString())
+      .set('userId', userId.toString())
+      .set('scoreTeamA', scoreTeamA.toString())
+      .set('scoreTeamB', scoreTeamB.toString())
+      .set('advancingTeamId', advancingTeamId.toString())
+      .set('hasPenalties', hasPenalties.toString());
+
+    return this.http.post<Record<string, unknown>>(
+      `${this.baseUrl}/prediction/create-user-knockout-prediction`, null, { params }
+    );
+  }
+
+  // PUT /prediction/update-user-knockout-prediction
+  updateUserKnockoutPrediction(
+    predictionId: number, scoreTeamA: number, scoreTeamB: number,
+    advancingTeamId: number, hasPenalties: boolean
+  ): Observable<Record<string, unknown>> {
+    const params = new HttpParams()
+      .set('predictionId', predictionId.toString())
+      .set('scoreTeamA', scoreTeamA.toString())
+      .set('scoreTeamB', scoreTeamB.toString())
+      .set('advancingTeamId', advancingTeamId.toString())
+      .set('hasPenalties', hasPenalties.toString());
+
+    return this.http.put<Record<string, unknown>>(
+      `${this.baseUrl}/prediction/update-user-knockout-prediction`, null, { params }
+    );
+  }
+
+  // GET /prediction/get-user-knockout-prediction
+  getUserKnockoutPrediction(userId: number): Observable<Record<string, unknown>[]> {
+    const params = new HttpParams().set('userId', userId.toString());
+    return this.http.get<Record<string, unknown>[]>(`${this.baseUrl}/prediction/get-user-knockout-prediction`, { params });
+  }
 }

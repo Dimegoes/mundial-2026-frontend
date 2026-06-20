@@ -5,7 +5,8 @@ import { RouterLink } from '@angular/router';
 import { ConfigService } from '../../core/services/config.service';
 import { MatchService } from '../../core/services/match.service';
 import { CsvMatchImportService, CsvImportResult } from '../../core/services/csv-match-import.service';
-import { KNOCKOUT_STAGE_ORDER, MATCH_STAGE_LABEL, COUNTRY_BY_ID } from '../../core/data/groups-mock.data';
+import { GroupService } from '../../core/services/group.service';
+import { KNOCKOUT_STAGE_ORDER, MATCH_STAGE_LABEL } from '../../core/data/match-stage.data';
 
 interface MatchRow {
   matchId: number;
@@ -35,6 +36,7 @@ export class AdminComponent implements OnInit {
   private configService = inject(ConfigService);
   private matchService = inject(MatchService);
   private csvImportService = inject(CsvMatchImportService);
+  private groupService = inject(GroupService);
 
   readonly stages = KNOCKOUT_STAGE_ORDER;
   readonly stageLabel = MATCH_STAGE_LABEL;
@@ -55,6 +57,7 @@ export class AdminComponent implements OnInit {
   get isKnockoutPhaseActive(): boolean { return this.configService.isKnockoutPhaseActive(); }
 
   ngOnInit(): void {
+    this.groupService.ensureLoaded().subscribe();
     this._loadMatches();
   }
 
@@ -79,7 +82,7 @@ export class AdminComponent implements OnInit {
   }
 
   teamName(countryId: number, fallback?: string): string {
-    return fallback || COUNTRY_BY_ID[countryId]?.name || `Equipo #${countryId}`;
+    return this.groupService.countryName(countryId, fallback);
   }
 
   toggleMatchLock(match: MatchRow): void {

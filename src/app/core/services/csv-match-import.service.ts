@@ -1,8 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { MatchService } from './match.service';
-import { GROUPS_MOCK, MatchStageId } from '../data/groups-mock.data';
+import { GroupService } from './group.service';
+import { MatchStageId } from '../data/match-stage.data';
 
 export interface CsvImportRow {
   round: string;
@@ -25,11 +26,9 @@ export interface CsvImportResult {
  * parsea el CSV en el navegador y llama a ese endpoint una vez por fila
  * — evita tener que tocar el backend para esta funcionalidad.
  *
- * LIMITACIÓN: el mapeo "nombre de equipo -> country_id" usa el MOCK de
- * groups-mock.data.ts (no coincide necesariamente con los country_id
- * reales del backend), y el mapeo "ronda -> matchStageId" es una
- * SUPOSICIÓN sin confirmar contra el backend. Verificar antes de
- * usar en producción.
+ * El mapeo "nombre de equipo -> country_id" usa los grupos/países REALES
+ * vía GroupService (GET /group/all). El mapeo "ronda -> matchStageId"
+ * sigue siendo una SUPOSICIÓN sin tabla de lookup en el backend.
  */
 const ROUND_TO_STAGE_ID: Record<string, number> = {
   group:         MatchStageId.GROUP,
@@ -49,17 +48,10 @@ const ROUND_TO_STAGE_ID: Record<string, number> = {
   final:         MatchStageId.FINAL,
 };
 
-const NAME_TO_COUNTRY_ID: Record<string, number> = GROUPS_MOCK
-  .flatMap(g => g.countries)
-  .reduce((acc, c) => ({
-    ...acc,
-    [c.name.toLowerCase()]: c.countryId,
-    [c.fifaCode.toLowerCase()]: c.countryId,
-  }), {} as Record<string, number>);
-
 @Injectable({ providedIn: 'root' })
 export class CsvMatchImportService {
-  constructor(private matchService: MatchService) {}
+  private matchService = inject(MatchService);
+  private groupService = inject(GroupService);
 
   parseCsv(text: string): CsvImportRow[] {
     const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
@@ -87,7 +79,13 @@ export class CsvMatchImportService {
   }
 
   resolveCountryId(teamName: string): number | undefined {
-    return NAME_TO_COUNTRY_ID[teamName.trim().toLowerCase()];
+    const needle = teamName.trim().toLowerCase();
+    for (const country of Object.values(this.groupService.countryById())) {
+      if (country.name.toLowerCase() === needle || country.fifaCode.toLowerCase() === needle) {
+        return country.countryId;
+      }
+    }
+    return undefined;
   }
 
   resolveStageId(round: string): number | undefined {
@@ -97,7 +95,9 @@ export class CsvMatchImportService {
   /** Crea un partido por fila vía POST /match/create-match. Una fila que falla no detiene al resto. */
   importRows(rows: CsvImportRow[]): Observable<CsvImportResult[]> {
     if (!rows.length) return of([]);
-    return forkJoin(rows.map(row => this._importRow(row)));
+    return this.groupService.ensureLoaded().pipe(
+      switchMap(() => forkJoin(rows.map(row => this._importRow(row)))),
+    );
   }
 
   private _importRow(row: CsvImportRow): Observable<CsvImportResult> {

@@ -6,7 +6,8 @@ import { forkJoin } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { PredictionService } from '../../core/services/prediction.service';
 import { ConfigService } from '../../core/services/config.service';
-import { GROUPS_MOCK, MockCountry, MockGroup } from '../../core/data/groups-mock.data';
+import { GroupService } from '../../core/services/group.service';
+import { Country, Group } from '../../core/models/domain.models';
 
 interface GroupPick {
   predictionId?: number;
@@ -30,8 +31,9 @@ export class GruposComponent implements OnInit {
   private auth        = inject(AuthService);
   private predictionService = inject(PredictionService);
   private configService     = inject(ConfigService);
+  private groupService      = inject(GroupService);
 
-  readonly groups: MockGroup[] = GROUPS_MOCK;
+  groups = signal<Group[]>([]);
 
   loading = signal(true);
   saving  = signal(false);
@@ -46,14 +48,14 @@ export class GruposComponent implements OnInit {
   }
 
   /** Países que NO fueron elegidos como 1° ni 2° en ningún grupo -> candidatos a "mejor tercero". */
-  readonly thirdCandidates = computed<MockCountry[]>(() => {
+  readonly thirdCandidates = computed<Country[]>(() => {
     const picks = this.picks();
     const chosenIds = new Set<number>();
     Object.values(picks).forEach(p => {
       if (p.firstPlaceId) chosenIds.add(p.firstPlaceId);
       if (p.secondPlaceId) chosenIds.add(p.secondPlaceId);
     });
-    return this.groups
+    return this.groups()
       .flatMap(g => g.countries)
       .filter(c => !chosenIds.has(c.countryId));
   });
@@ -65,7 +67,8 @@ export class GruposComponent implements OnInit {
 
   readonly allGroupsComplete = computed<boolean>(() => {
     const picks = this.picks();
-    return this.groups.every(g => {
+    const groups = this.groups();
+    return groups.length > 0 && groups.every(g => {
       const p = picks[g.groupId];
       return !!p?.firstPlaceId && !!p?.secondPlaceId;
     });
@@ -76,6 +79,9 @@ export class GruposComponent implements OnInit {
   );
 
   ngOnInit(): void {
+    this.groupService.ensureLoaded().subscribe({
+      next: (groups) => this.groups.set(groups),
+    });
     this._loadExistingPredictions();
   }
 
@@ -117,7 +123,7 @@ export class GruposComponent implements OnInit {
     this.errorMsg.set(null);
     this.successMsg.set(null);
 
-    const groupRequests = this.groups.map(g => {
+    const groupRequests = this.groups().map(g => {
       const pick = this.picks()[g.groupId];
       if (!pick?.firstPlaceId || !pick?.secondPlaceId) return null;
 

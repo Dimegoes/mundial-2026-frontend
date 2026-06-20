@@ -5,9 +5,6 @@
     <p class="page-subtitle">
       Selecciona 1° y 2° de cada grupo, y elige tus 8 mejores terceros.
     </p>
-    <div class="mock-banner">
-      ⚠️ Los equipos/grupos mostrados son datos de prueba (mock) — pendientes del endpoint real del backend.
-    </div>
     @if (locked) {
       <div class="lock-banner">🔒 La fase de grupos está bloqueada. No puedes editar tu predicción.</div>
     }
@@ -17,8 +14,12 @@
     <p class="status-text">Cargando tu predicción...</p>
   } @else {
 
+    @if (!groups().length) {
+      <p class="status-text">No hay grupos cargados todavía.</p>
+    }
+
     <section class="groups-grid">
-      @for (group of groups; track group.groupId) {
+      @for (group of groups(); track group.groupId) {
         <div class="group-card">
           <h3 class="group-name">{{ group.name }}</h3>
 
@@ -32,7 +33,7 @@
               <option [ngValue]="null">— Selecciona —</option>
               @for (c of group.countries; track c.countryId) {
                 <option [ngValue]="c.countryId" [disabled]="c.countryId === picks()[group.groupId]?.secondPlaceId">
-                  {{ c.flag }} {{ c.name }}
+                  {{ c.name }}
                 </option>
               }
             </select>
@@ -48,7 +49,7 @@
               <option [ngValue]="null">— Selecciona —</option>
               @for (c of group.countries; track c.countryId) {
                 <option [ngValue]="c.countryId" [disabled]="c.countryId === picks()[group.groupId]?.firstPlaceId">
-                  {{ c.flag }} {{ c.name }}
+                  {{ c.name }}
                 </option>
               }
             </select>
@@ -66,7 +67,7 @@
           <label class="third-chip" [class.selected]="isThirdSelected(c.countryId)" [class.disabled]="locked">
             <input type="checkbox" [checked]="isThirdSelected(c.countryId)" [disabled]="locked"
               (change)="toggleThird(c.countryId)">
-            {{ c.flag }} {{ c.name }}
+            {{ c.name }}
           </label>
         }
       </div>

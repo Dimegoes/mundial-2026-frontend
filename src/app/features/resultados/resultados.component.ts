@@ -2,7 +2,8 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatchService } from '../../core/services/match.service';
-import { KNOCKOUT_STAGE_ORDER, MatchStageId, MATCH_STAGE_LABEL, COUNTRY_BY_ID } from '../../core/data/groups-mock.data';
+import { GroupService } from '../../core/services/group.service';
+import { KNOCKOUT_STAGE_ORDER, MatchStageId, MATCH_STAGE_LABEL } from '../../core/data/match-stage.data';
 
 interface ResultView {
   matchId: number;
@@ -28,6 +29,7 @@ interface ResultView {
 })
 export class ResultadosComponent implements OnInit {
   private matchService = inject(MatchService);
+  private groupService = inject(GroupService);
 
   readonly stageLabel = MATCH_STAGE_LABEL;
   readonly allStages = [MatchStageId.GROUP, ...KNOCKOUT_STAGE_ORDER];
@@ -49,6 +51,7 @@ export class ResultadosComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.groupService.ensureLoaded().subscribe();
     this.matchService.getMatches().subscribe({
       next: (raw) => {
         const results: ResultView[] = (raw ?? []).map(r => {
@@ -81,6 +84,6 @@ export class ResultadosComponent implements OnInit {
   }
 
   teamName(countryId: number, fallback?: string): string {
-    return fallback || COUNTRY_BY_ID[countryId]?.name || `Equipo #${countryId}`;
+    return this.groupService.countryName(countryId, fallback);
   }
 }
