@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://TU-BACKEND-URL.com/api', // ← Reemplaza con la URL real del backend
+  apiUrl: 'https://mundial-2026-service-production.up.railway.app/api',
 };
