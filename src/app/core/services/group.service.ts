@@ -41,6 +41,11 @@ export class GroupService {
     return fallback || this._countryById()[countryId]?.name || `Equipo #${countryId}`;
   }
 
+  /** URL de la bandera (FIFA) — undefined si el país no se cargó o no tiene imagen. */
+  countryImage(countryId: number): string | undefined {
+    return this._countryById()[countryId]?.image;
+  }
+
   private _mapGroups(raw: Record<string, unknown>[]): Group[] {
     return (raw ?? []).map(g => ({
       groupId: Number(g['groupId'] ?? g['group_id']),

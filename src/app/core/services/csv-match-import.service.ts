@@ -125,9 +125,17 @@ export class CsvMatchImportService {
   }
 
   private _toIsoDate(value: string): string | null {
-    // Espera "YYYY-MM-DD HH:MM" -> ISO 8601
-    const normalized = value.includes('T') ? value : value.replace(' ', 'T');
-    const date = new Date(normalized);
-    return isNaN(date.getTime()) ? null : date.toISOString();
+    // Espera "YYYY-MM-DD HH:MM" interpretado SIEMPRE como hora peruana
+    // (UTC-5 fijo, Perú no usa horario de verano) — sin importar la zona
+    // horaria del navegador de quien hace la importación. `new Date(str)`
+    // sin offset usaría la timezone LOCAL del navegador, lo cual rompía
+    // el bloqueo automático 1h-antes-del-kickoff para usuarios en otras
+    // zonas horarias. Por eso parseamos a mano y sumamos 5h para UTC.
+    const m = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})$/);
+    if (!m) return null;
+
+    const [, year, month, day, hour, minute] = m;
+    const utcMs = Date.UTC(Number(year), Number(month) - 1, Number(day), Number(hour) + 5, Number(minute));
+    return new Date(utcMs).toISOString();
   }
 }

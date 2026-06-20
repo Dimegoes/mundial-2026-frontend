@@ -25,34 +25,44 @@
 
           <div class="place-row">
             <label class="place-label">1° Lugar</label>
-            <select
-              [disabled]="locked"
-              [ngModel]="picks()[group.groupId]?.firstPlaceId ?? null"
-              (ngModelChange)="onFirstPlaceChange(group.groupId, $event)"
-              name="first-{{group.groupId}}">
-              <option [ngValue]="null">— Selecciona —</option>
-              @for (c of group.countries; track c.countryId) {
-                <option [ngValue]="c.countryId" [disabled]="c.countryId === picks()[group.groupId]?.secondPlaceId">
-                  {{ c.name }}
-                </option>
+            <div class="select-with-flag">
+              @if (picks()[group.groupId]?.firstPlaceId) {
+                <img class="flag-icon" [src]="flagUrl(picks()[group.groupId]!.firstPlaceId!)" alt="">
               }
-            </select>
+              <select
+                [disabled]="locked"
+                [ngModel]="picks()[group.groupId]?.firstPlaceId ?? null"
+                (ngModelChange)="onFirstPlaceChange(group.groupId, $event)"
+                name="first-{{group.groupId}}">
+                <option [ngValue]="null">— Selecciona —</option>
+                @for (c of group.countries; track c.countryId) {
+                  <option [ngValue]="c.countryId" [disabled]="c.countryId === picks()[group.groupId]?.secondPlaceId">
+                    {{ c.name }}
+                  </option>
+                }
+              </select>
+            </div>
           </div>
 
           <div class="place-row">
             <label class="place-label">2° Lugar</label>
-            <select
-              [disabled]="locked"
-              [ngModel]="picks()[group.groupId]?.secondPlaceId ?? null"
-              (ngModelChange)="onSecondPlaceChange(group.groupId, $event)"
-              name="second-{{group.groupId}}">
-              <option [ngValue]="null">— Selecciona —</option>
-              @for (c of group.countries; track c.countryId) {
-                <option [ngValue]="c.countryId" [disabled]="c.countryId === picks()[group.groupId]?.firstPlaceId">
-                  {{ c.name }}
-                </option>
+            <div class="select-with-flag">
+              @if (picks()[group.groupId]?.secondPlaceId) {
+                <img class="flag-icon" [src]="flagUrl(picks()[group.groupId]!.secondPlaceId!)" alt="">
               }
-            </select>
+              <select
+                [disabled]="locked"
+                [ngModel]="picks()[group.groupId]?.secondPlaceId ?? null"
+                (ngModelChange)="onSecondPlaceChange(group.groupId, $event)"
+                name="second-{{group.groupId}}">
+                <option [ngValue]="null">— Selecciona —</option>
+                @for (c of group.countries; track c.countryId) {
+                  <option [ngValue]="c.countryId" [disabled]="c.countryId === picks()[group.groupId]?.firstPlaceId">
+                    {{ c.name }}
+                  </option>
+                }
+              </select>
+            </div>
           </div>
         </div>
       }
@@ -67,6 +77,7 @@
           <label class="third-chip" [class.selected]="isThirdSelected(c.countryId)" [class.disabled]="locked">
             <input type="checkbox" [checked]="isThirdSelected(c.countryId)" [disabled]="locked"
               (change)="toggleThird(c.countryId)">
+            @if (c.image) { <img class="flag-icon" [src]="c.image" alt=""> }
             {{ c.name }}
           </label>
         }

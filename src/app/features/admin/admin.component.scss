@@ -31,6 +31,15 @@
   flex-wrap: wrap;
 }
 
+.stage-filter-tabs {
+  margin-bottom: 16px;
+
+  .tab {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+}
+
 .tab {
   font-family: var(--font-display);
   font-weight: 600;

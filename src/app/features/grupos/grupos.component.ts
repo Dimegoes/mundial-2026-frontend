@@ -33,6 +33,10 @@ export class GruposComponent implements OnInit {
   private configService     = inject(ConfigService);
   private groupService      = inject(GroupService);
 
+  flagUrl(countryId: number): string | undefined {
+    return this.groupService.countryImage(countryId);
+  }
+
   groups = signal<Group[]>([]);
 
   loading = signal(true);

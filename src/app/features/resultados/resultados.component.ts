@@ -86,4 +86,8 @@ export class ResultadosComponent implements OnInit {
   teamName(countryId: number, fallback?: string): string {
     return this.groupService.countryName(countryId, fallback);
   }
+
+  flagUrl(countryId: number): string | undefined {
+    return this.groupService.countryImage(countryId);
+  }
 }

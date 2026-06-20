@@ -21,7 +21,10 @@
           <div class="results-list">
             @for (r of resultsByStage()[stageId]; track r.matchId) {
               <div class="result-row" [class.pending]="!r.played">
-                <span class="team home">{{ teamName(r.homeTeamId, r.homeTeamName) }}</span>
+                <span class="team home">
+                  {{ teamName(r.homeTeamId, r.homeTeamName) }}
+                  @if (flagUrl(r.homeTeamId)) { <img class="flag-icon" [src]="flagUrl(r.homeTeamId)" alt=""> }
+                </span>
 
                 @if (r.played) {
                   <span class="score">{{ r.homeScore }} - {{ r.awayScore }}</span>
@@ -29,9 +32,12 @@
                   <span class="score pending-label">vs</span>
                 }
 
-                <span class="team away">{{ teamName(r.awayTeamId, r.awayTeamName) }}</span>
+                <span class="team away">
+                  @if (flagUrl(r.awayTeamId)) { <img class="flag-icon" [src]="flagUrl(r.awayTeamId)" alt=""> }
+                  {{ teamName(r.awayTeamId, r.awayTeamName) }}
+                </span>
 
-                <span class="kickoff">{{ r.kickOffTime | date:'dd MMM, HH:mm' }}</span>
+                <span class="kickoff">{{ r.kickOffTime | date:'dd MMM, HH:mm':'-0500' }} (PE)</span>
 
                 @if (r.played && r.penalties) {
                   <span class="penalties-tag">Penales</span>

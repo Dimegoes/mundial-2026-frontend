@@ -39,9 +39,11 @@
         <div class="match-card" [class.locked]="isMatchLocked(match)">
           <div class="match-header">
             <span class="match-teams">
+              @if (flagUrl(match.homeTeamId)) { <img class="flag-icon" [src]="flagUrl(match.homeTeamId)" alt=""> }
               {{ teamName(match.homeTeamId, match.homeTeamName) }} vs {{ teamName(match.awayTeamId, match.awayTeamName) }}
+              @if (flagUrl(match.awayTeamId)) { <img class="flag-icon" [src]="flagUrl(match.awayTeamId)" alt=""> }
             </span>
-            <span class="match-kickoff">{{ match.kickOffTime | date:'dd MMM yyyy, HH:mm' }}</span>
+            <span class="match-kickoff">{{ match.kickOffTime | date:'dd MMM yyyy, HH:mm':'-0500' }} (PE)</span>
           </div>
 
           <div class="match-form">

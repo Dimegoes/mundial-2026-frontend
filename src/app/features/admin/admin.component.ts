@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -6,7 +6,7 @@ import { ConfigService } from '../../core/services/config.service';
 import { MatchService } from '../../core/services/match.service';
 import { CsvMatchImportService, CsvImportResult } from '../../core/services/csv-match-import.service';
 import { GroupService } from '../../core/services/group.service';
-import { KNOCKOUT_STAGE_ORDER, MATCH_STAGE_LABEL } from '../../core/data/match-stage.data';
+import { KNOCKOUT_STAGE_ORDER, MATCH_STAGE_LABEL, MatchStageId } from '../../core/data/match-stage.data';
 
 interface MatchRow {
   matchId: number;
@@ -15,6 +15,7 @@ interface MatchRow {
   homeTeamName: string;
   awayTeamName: string;
   kickOffTime: string;
+  matchStageId: number;
   isLocked: boolean;
 }
 
@@ -40,13 +41,21 @@ export class AdminComponent implements OnInit {
 
   readonly stages = KNOCKOUT_STAGE_ORDER;
   readonly stageLabel = MATCH_STAGE_LABEL;
+  readonly allStages = [MatchStageId.GROUP, ...KNOCKOUT_STAGE_ORDER];
 
   activeTab = signal<'fases' | 'partidos' | 'csv'>('fases');
 
   // ── Partidos ─────────────────────────────────────────────
   matches = signal<MatchRow[]>([]);
   loadingMatches = signal(true);
+  matchesStageFilter = signal<number | null>(null); // null = todas las fases
   resultForm: Record<number, ResultForm> = {};
+
+  readonly filteredMatches = computed<MatchRow[]>(() => {
+    const filter = this.matchesStageFilter();
+    const matches = this.matches();
+    return filter === null ? matches : matches.filter(m => m.matchStageId === filter);
+  });
 
   // ── CSV ──────────────────────────────────────────────────
   csvResults = signal<CsvImportResult[] | null>(null);
@@ -79,6 +88,10 @@ export class AdminComponent implements OnInit {
 
   toggleStage(stageId: number): void {
     this.configService.setKnockoutStage(stageId, !this.isStageActive(stageId));
+  }
+
+  setMatchesStageFilter(stageId: number | null): void {
+    this.matchesStageFilter.set(stageId);
   }
 
   teamName(countryId: number, fallback?: string): string {
@@ -159,6 +172,7 @@ export class AdminComponent implements OnInit {
           homeTeamName: String(r['homeTeamName'] ?? r['home_team_name'] ?? ''),
           awayTeamName: String(r['awayTeamName'] ?? r['away_team_name'] ?? ''),
           kickOffTime:  String(r['kickOffTime'] ?? r['kick_off_time'] ?? ''),
+          matchStageId: Number(r['matchStageId'] ?? r['match_stage_id']),
           isLocked:     Number(r['isLocked'] ?? r['is_locked']) === 1,
         })).filter(m => !!m.matchId);
 

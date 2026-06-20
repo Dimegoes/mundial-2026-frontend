@@ -52,12 +52,25 @@
       } @else if (!matches().length) {
         <p class="status-text">No hay partidos cargados. Usa la pestaña "Importar CSV".</p>
       } @else {
+        <div class="tabs stage-filter-tabs">
+          <button class="tab" [class.active]="matchesStageFilter() === null" (click)="setMatchesStageFilter(null)">Todas</button>
+          @for (stageId of allStages; track stageId) {
+            <button class="tab" [class.active]="matchesStageFilter() === stageId" (click)="setMatchesStageFilter(stageId)">
+              {{ stageLabel[stageId] }}
+            </button>
+          }
+        </div>
+
+        @if (!filteredMatches().length) {
+          <p class="status-text">No hay partidos en esta fase.</p>
+        }
+
         <div class="matches-list">
-          @for (match of matches(); track match.matchId) {
+          @for (match of filteredMatches(); track match.matchId) {
             <div class="match-row">
               <div class="match-info">
                 <span class="match-teams">{{ teamName(match.homeTeamId, match.homeTeamName) }} vs {{ teamName(match.awayTeamId, match.awayTeamName) }}</span>
-                <span class="match-kickoff">{{ match.kickOffTime | date:'dd MMM yyyy, HH:mm' }}</span>
+                <span class="match-kickoff">{{ match.kickOffTime | date:'dd MMM yyyy, HH:mm':'-0500' }} (PE)</span>
               </div>
 
               <button class="lock-btn" [class.locked]="match.isLocked" (click)="toggleMatchLock(match)">
