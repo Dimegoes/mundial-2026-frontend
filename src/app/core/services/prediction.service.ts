@@ -99,11 +99,12 @@ export class PredictionService {
 
   // PUT /prediction/update-user-knockout-prediction
   updateUserKnockoutPrediction(
-    predictionId: number, scoreTeamA: number, scoreTeamB: number,
+    predictionId: number, matchId: number, scoreTeamA: number, scoreTeamB: number,
     advancingTeamId: number, hasPenalties: boolean
   ): Observable<Record<string, unknown>> {
     const params = new HttpParams()
       .set('predictionId', predictionId.toString())
+      .set('matchId', matchId.toString())
       .set('scoreTeamA', scoreTeamA.toString())
       .set('scoreTeamB', scoreTeamB.toString())
       .set('advancingTeamId', advancingTeamId.toString())

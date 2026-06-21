@@ -26,10 +26,6 @@
       }
     </div>
 
-    @if (errorMsg()) {
-      <p class="error-text">{{ errorMsg() }}</p>
-    }
-
     @if (!matchesForActiveStage().length) {
       <p class="status-text">No hay partidos disponibles para esta ronda todavía.</p>
     }
@@ -104,6 +100,13 @@
           </div>
         </div>
       }
+    </div>
+  }
+
+  @if (errorMsg()) {
+    <div class="toast toast-error">
+      <span>⚠️ {{ errorMsg() }}</span>
+      <button class="toast-close" (click)="dismissError()" aria-label="Cerrar">✕</button>
     </div>
   }
 </div>

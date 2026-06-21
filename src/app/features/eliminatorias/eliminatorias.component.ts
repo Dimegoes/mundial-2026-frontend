@@ -124,7 +124,7 @@ export class EliminatoriasComponent implements OnInit, OnDestroy {
     this.saving.set(match.matchId);
 
     const request$ = form.predictionId
-      ? this.predictionService.updateUserKnockoutPrediction(form.predictionId, form.scoreTeamA, form.scoreTeamB, form.advancingTeamId, form.hasPenalties)
+      ? this.predictionService.updateUserKnockoutPrediction(form.predictionId, match.matchId, form.scoreTeamA, form.scoreTeamB, form.advancingTeamId, form.hasPenalties)
       : this.predictionService.createUserKnockoutPrediction(match.matchId, userId, form.scoreTeamA, form.scoreTeamB, form.advancingTeamId, form.hasPenalties);
 
     request$.subscribe({
@@ -133,11 +133,23 @@ export class EliminatoriasComponent implements OnInit, OnDestroy {
         this.updateForm(match.matchId, { predictionId: predictionId ?? null });
         this.saving.set(null);
       },
-      error: () => {
-        this.errorMsg.set('No se pudo guardar la predicción.');
+      error: (err) => {
+        // 409 = el backend rechazó por bloqueo de horario (validación real,
+        // la del frontend es solo cosmética). Mostramos el motivo exacto y
+        // refrescamos los partidos para que el botón se actualice sin que
+        // el usuario tenga que recargar la página a mano.
+        const backendMessage = err?.error?.message;
+        this.errorMsg.set(backendMessage ?? 'No se pudo guardar la predicción.');
         this.saving.set(null);
+        if (err?.status === 409) {
+          this._loadMatches();
+        }
       },
     });
+  }
+
+  dismissError(): void {
+    this.errorMsg.set(null);
   }
 
   isSaved(matchId: number): boolean {

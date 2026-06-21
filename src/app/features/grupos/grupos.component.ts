@@ -1,6 +1,5 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
@@ -23,7 +22,7 @@ interface ThirdPick {
 @Component({
   selector: 'app-grupos',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, RouterLink],
   templateUrl: './grupos.component.html',
   styleUrl: './grupos.component.scss',
 })
@@ -89,12 +88,14 @@ export class GruposComponent implements OnInit {
     this._loadExistingPredictions();
   }
 
-  onFirstPlaceChange(groupId: number, countryId: number | null): void {
-    this._updatePick(groupId, { firstPlaceId: countryId ?? undefined });
+  onFirstPlaceChange(groupId: number, countryId: number): void {
+    const current = this.picks()[groupId]?.firstPlaceId;
+    this._updatePick(groupId, { firstPlaceId: current === countryId ? undefined : countryId });
   }
 
-  onSecondPlaceChange(groupId: number, countryId: number | null): void {
-    this._updatePick(groupId, { secondPlaceId: countryId ?? undefined });
+  onSecondPlaceChange(groupId: number, countryId: number): void {
+    const current = this.picks()[groupId]?.secondPlaceId;
+    this._updatePick(groupId, { secondPlaceId: current === countryId ? undefined : countryId });
   }
 
   toggleThird(countryId: number): void {
